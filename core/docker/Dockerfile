@@ -20,15 +20,16 @@ ARG JDK_VERSION
 ENV JAVA_HOME="/usr/lib/jvm/${JDK_VERSION}"
 
 RUN \
-    set -xeuo pipefail && \
-    microdnf install -y tar gzip wget && \
-    # Install JDK from the provided archive link \
-    echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
-    mkdir -p "${JAVA_HOME}" && \
-    wget --retry-connrefused --tries=8 --timeout=30 "${JDK_DOWNLOAD_LINK}" -O /jdktarfile && \
-    tar -zxf /jdktarfile --strip 1 -C "${JAVA_HOME}" && \
-    rm /jdktarfile && \
-    echo "Done"
+     set -xeuo pipefail && \
+     microdnf install -y tar gzip curl sed && \
+     echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
+     mkdir -p "${JAVA_HOME}" && \
+     REDIRECT_URL=$(curl -sIL "${JDK_DOWNLOAD_LINK}" | grep -i '^location:' | tail -1 | sed 's/location: *//i' | sed 's/\r$//' | sed 's|^ttps://|https://|') && \
+     echo "Resolved URL: ${REDIRECT_URL}" && \
+     curl -#LfS --retry 8 --retry-delay 2 --max-time 300 "${REDIRECT_URL:-${JDK_DOWNLOAD_LINK}}" -o /jdktarfile && \
+     tar -zxf /jdktarfile --strip 1 -C "${JAVA_HOME}" && \
+     rm /jdktarfile && \
+     echo "JDK installed successfully"
 
 FROM redhat/ubi10 AS packages
 
