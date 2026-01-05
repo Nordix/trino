@@ -21,12 +21,13 @@ ENV JAVA_HOME="/usr/lib/jvm/${JDK_VERSION}"
 
 RUN \
     set -xeuo pipefail && \
-    microdnf install -y tar gzip && \
+    microdnf install -y tar gzip wget && \
     # Install JDK from the provided archive link \
     echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
     mkdir -p "${JAVA_HOME}" && \
-    curl -#LfS --retry 8 "${JDK_DOWNLOAD_LINK}" -o /jdktarfile && \
+    wget --retry-connrefused --tries=8 --timeout=30 "${JDK_DOWNLOAD_LINK}" -O /jdktarfile && \
     tar -zxf /jdktarfile --strip 1 -C "${JAVA_HOME}" && \
+    rm /jdktarfile && \
     echo "Done"
 
 FROM redhat/ubi10 AS packages
